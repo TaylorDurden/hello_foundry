@@ -57,6 +57,14 @@ $ forge update lib/solmate
 $ forge remove solmate
 
 $ forge install OpenZeppelin/openzeppelin-contracts
+
+$ forge remappings
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+ds-test/=lib/solmate/lib/ds-test/src/
+erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
+forge-std/=lib/forge-std/src/
+openzeppelin-contracts/=lib/openzeppelin-contracts/
+solmate/=lib/solmate/src/
 ```
 
 ---
