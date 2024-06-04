@@ -1,66 +1,62 @@
-## Foundry
+# hello-foundry
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
+https://github.com/foundry-rs/foundry
 
 https://book.getfoundry.sh/
 
-## Usage
+## Basic
 
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
+- [x] Install
 
 ```shell
-$ forge test
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
 ```
 
-### Format
+- [x] Init
 
 ```shell
-$ forge fmt
+forge init
 ```
 
-### Gas Snapshots
+- [x] Basic commands
 
 ```shell
-$ forge snapshot
+forge build
+forge test
+forge test --match-path test/HelloWorld -vvvv
 ```
 
-### Anvil
+---
+
+- [x] Test
+  - counter app
+  - test setup, ok, fail
+  - match
+  - verbose
+  - gas report
 
 ```shell
-$ anvil
+forge test --match-path test/Counter.t.sol -vvv --gas-report
 ```
 
-### Deploy
+---
+
+- [x] Solidity version and optimizer settings
+
+https://github.com/foundry-rs/foundry/tree/master/config
+
+---
+
+- [x] Remapping
 
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+$ forge remappings
+$ forge install transmissions11/solmate
+$ forge update lib/solmate
+$ forge remove solmate
+
+$ forge install OpenZeppelin/openzeppelin-contracts
 ```
 
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+---
