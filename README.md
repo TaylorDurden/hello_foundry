@@ -9,22 +9,22 @@ https://book.getfoundry.sh/
 - [x] Install
 
 ```shell
-curl -L https://foundry.paradigm.xyz | bash
-foundryup
+$ curl -L https://foundry.paradigm.xyz | bash
+$ foundryup
 ```
 
 - [x] Init
 
 ```shell
-forge init
+$ forge init
 ```
 
 - [x] Basic commands
 
 ```shell
-forge build
-forge test
-forge test --match-path test/HelloWorld -vvvv
+$ forge build
+$ forge test
+$ forge test --match-path test/HelloWorld -vvvv
 ```
 
 ---
@@ -37,7 +37,7 @@ forge test --match-path test/HelloWorld -vvvv
   - gas report
 
 ```shell
-forge test --match-path test/Counter.t.sol -vvv --gas-report
+$ forge test --match-path test/Counter.t.sol -vvv --gas-report
 ```
 
 ---
@@ -51,7 +51,6 @@ https://github.com/foundry-rs/foundry/tree/master/config
 - [x] Remapping
 
 ```shell
-$ forge remappings
 $ forge install transmissions11/solmate
 $ forge update lib/solmate
 $ forge remove solmate
@@ -64,7 +63,45 @@ ds-test/=lib/solmate/lib/ds-test/src/
 erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
 forge-std/=lib/forge-std/src/
 openzeppelin-contracts/=lib/openzeppelin-contracts/
-solmate/=lib/solmate/src/
+```
+
+If you got a error underline in vscode, please use below command and reopen vscode editor.
+
+```shell
+$ forge remappings > remappings.txt
 ```
 
 ---
+
+- [x] Formatter
+
+```shell
+$ forge fmt
+```
+
+---
+
+- [x] console (Counter, test, log int)
+
+```shell
+forge test --match-path test/Console.t.sol -vv
+```
+
+---
+
+## Intermediate
+
+---
+
+- [x] Test auth -->
+      `$ forge test -vvvv --match-path test/Auth.t.sol`
+- [x] Test error -->
+      `$ forge test -vvvv --match-path test/Error.t.sol`
+  - `vm.expectRevert`
+  - `require` error message
+  - custom error
+  - error label assertions
+- [x] Test event (expectEmit)
+- [x] Test time (`Auction.sol`)
+- [x] Test send eth (`Wallet.sol`) - hoax, deal
+- [x] Test signature
