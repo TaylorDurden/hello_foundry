@@ -108,3 +108,4 @@ forge test --match-path test/Console.t.sol -vv
 - [x] Test send eth (`Wallet.sol`) - hoax, deal
   - forge test --match-path test/Wallet.t.sol -vvvv
 - [x] Test signature
+  - forge test --match-path test/Signature.t.sol -vvvv
