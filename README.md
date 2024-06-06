@@ -124,3 +124,29 @@ forge test --fork-url $FORK_URL --match-path test/Fork.t.sol -vvv
 ```shell
 forge test --fork-url $FORK_URL --match-path test/DAI.t.sol -vvv
 ```
+
+- [ ] crosschain fork
+
+- [x] Fuzzing (assume, bound)
+
+```shell
+forge test --match-path test/Fuzz.t.sol
+```
+
+- [x] Invariant
+
+```shell
+# Open testing
+forge test --match-path test/invariants/Invariant_0.t.sol -vvv
+forge test --match-path test/invariants/Invariant_1.t.sol -vvv
+# Handler
+forge test --match-path test/invariants/Invariant_2.t.sol -vvv
+# Actor management
+forge test --match-path test/invariants/Invariant_3.t.sol -vvv
+```
+
+- [x] FFI
+
+```shell
+forge test --match-path test/FFI.t.sol --ffi -vvv
+```
