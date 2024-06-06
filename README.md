@@ -109,3 +109,18 @@ forge test --match-path test/Console.t.sol -vv
   - forge test --match-path test/Wallet.t.sol -vvvv
 - [x] Test signature
   - forge test --match-path test/Signature.t.sol -vvvv
+  - forge test --match-path test/app/GaslessTokenTransfer.t.sol -vvv
+
+## Advanced
+
+- [x] mainnet fork
+
+```shell
+forge test --fork-url $FORK_URL --match-path test/Fork.t.sol -vvv
+```
+
+- [x] main fork deal (DAI)
+
+```shell
+forge test --fork-url $FORK_URL --match-path test/DAI.t.sol -vvv
+```

@@ -4,6 +4,11 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 
 contract SignatureTest is Test {
+    // privateKey = 123
+    // publicKey = vm.addr(private key)
+    // message = "secret message"
+    // message hash = keccak256(message)
+    // vm.sign(private key, message hash)
     function testSignature() public {
         uint256 privateKey = 123;
         address publicKey = vm.addr(privateKey);
