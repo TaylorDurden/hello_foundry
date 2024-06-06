@@ -102,6 +102,9 @@ forge test --match-path test/Console.t.sol -vv
   - custom error
   - error label assertions
 - [x] Test event (expectEmit)
+  - forge test --match-path test/Event.t.sol -vvvv
 - [x] Test time (`Auction.sol`)
+  - forge test --match-path test/Time.t.sol -vvvv
 - [x] Test send eth (`Wallet.sol`) - hoax, deal
+  - forge test --match-path test/Wallet.t.sol -vvvv
 - [x] Test signature
