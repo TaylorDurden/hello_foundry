@@ -165,3 +165,32 @@ pip install eth-abi
 ```shell
 FOUNDRY_FUZZ_RUNS=100 forge test --match-path test/DifferentialTest.t.sol --ffi -vvv
 ```
+
+## Misc
+
+- [x] Vyper
+
+https://github.com/0xKitsune/Foundry-Vyper
+
+0. Install vyper
+
+```shell
+# virtual env
+python3 -m pip install --user virtualenv
+virtualenv -p python3 venv
+source venv/bin/activate
+
+pip3 install vyper==0.3.7
+
+# Check installation
+vyper --version
+```
+
+1. Put Vyper contract inside `vyper_contracts`
+2. Declare Solidity interface inside `src`
+3. Copy & paste `lib/utils/VyperDeployer.sol`
+4. Write test
+
+```shell
+forge test --match-path test/Vyper.t.sol --ffi
+```
