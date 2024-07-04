@@ -12,3 +12,10 @@ docs/
 
 # Dotenv file
 .env
+notes
+
+node_modules
+package-lock.json
+venv
+tmp
+broadcast
