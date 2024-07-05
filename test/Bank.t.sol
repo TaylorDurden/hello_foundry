@@ -6,6 +6,8 @@ import "../src/Bank.sol";
 
 contract BankTest is Test {
     Bank bank;
+    BigBank bigBank;
+    BigBankProxy bigBankProxy;
     address owner;
     address user1;
     address user2;
@@ -21,6 +23,23 @@ contract BankTest is Test {
         user4 = address(0x4);
 
         bank = new Bank();
+        bigBank = new BigBank();
+        bigBankProxy = new BigBankProxy();
+    }
+
+    function testBigBankTransferOwnerAndWithdraw() public {
+        assertEq(bigBank.owner(), owner);
+        bigBank.transferOwner(address(bigBankProxy));
+        assertEq(bigBank.owner(), address(bigBankProxy));
+        vm.deal(user1, 10 ether);
+        vm.prank(user1);
+        (bool s1, ) = address(bigBank).call{value: 5 ether}("");
+        assert(s1);
+        assertEq(user1.balance, 5 ether);
+        assertEq(address(bigBank).balance, 5 ether);
+        bigBankProxy.withdraw(bigBank, user1, 4 ether);
+        assertEq(user1.balance, 9 ether);
+        assertEq(address(bigBank).balance, 1 ether);
     }
 
     function testDeposit() public {
@@ -35,7 +54,7 @@ contract BankTest is Test {
         vm.stopPrank();
     }
 
-    function testWithdraw() public {
+    function testWithdrawAll() public {
         vm.deal(user1, initEther);
         vm.deal(user2, initEther);
         vm.deal(user3, initEther);
@@ -81,6 +100,36 @@ contract BankTest is Test {
         assertEq(bank.userBalances(user1), 0);
         assertEq(bank.userBalances(user2), 0);
         assertEq(bank.userBalances(user3), 0);
+    }
+
+    function testWithdrawSingeUser() public {
+        vm.deal(user1, initEther);
+        vm.deal(user2, initEther);
+
+        uint256 user1TransFee = 5 ether;
+        uint256 user2TransFee = 7 ether;
+
+        vm.prank(user1);
+        (bool s1, ) = address(bank).call{value: user1TransFee}("");
+        assert(s1);
+
+        vm.prank(user2);
+        (bool s2, ) = address(bank).call{value: user2TransFee}("");
+        assert(s2);
+
+        uint256 balanceAfter1 = user1.balance;
+        uint256 balanceAfter2 = user2.balance;
+
+        // Call the withdraw function
+        vm.prank(owner);
+        bank.withdraw(user1, 2 ether);
+        bank.withdraw(user2, 2 ether);
+
+        assertEq(user1.balance, initEther - user1TransFee + 2 ether);
+        assertEq(user2.balance, initEther - user2TransFee + 2 ether);
+
+        assertEq(bank.userBalances(user1), user1TransFee - 2 ether);
+        assertEq(bank.userBalances(user2), user2TransFee - 2 ether);
     }
 
     function testTop3Users() public {
