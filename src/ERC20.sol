@@ -17,7 +17,12 @@ contract ERC20 is IERC20 {
         decimals = _decimals;
     }
 
-    function transfer(address recipient, uint256 amount) external returns (bool) {
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool) {
+        require(balanceOf[msg.sender] >= amount, "Insufficient balance");
+
         balanceOf[msg.sender] -= amount;
         balanceOf[recipient] += amount;
         emit Transfer(msg.sender, recipient, amount);
@@ -30,11 +35,18 @@ contract ERC20 is IERC20 {
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {
-        allowance[sender][msg.sender] -= amount;
-        balanceOf[sender] -= amount;
-        balanceOf[recipient] += amount;
-        emit Transfer(sender, recipient, amount);
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool) {
+        require(balanceOf[from] >= amount, "Insufficient balance");
+        require(allowance[from][msg.sender] >= amount, "Allowance exceeded");
+
+        balanceOf[from] -= amount;
+        balanceOf[to] += amount;
+        allowance[from][msg.sender] -= amount;
+        emit Transfer(from, to, amount);
         return true;
     }
 
