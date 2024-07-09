@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.13;
 
-import "./interfaces/IERC20.sol";
 import "./interfaces/IERC1363.sol";
 import "./interfaces/IERC1363Receiver.sol";
 import "./interfaces/IERC1363Spender.sol";
@@ -124,7 +123,7 @@ contract TokenBankV1 is ERC1363Guardian {
         userTokenBalance[msg.sender][token] -= amount;
         IERC20 erc20Token = IERC20(token);
         require(
-            erc20Token.transfer({recipient: msg.sender, amount: amount}),
+            erc20Token.transfer(msg.sender, amount),
             "Token transfer failed"
         );
 

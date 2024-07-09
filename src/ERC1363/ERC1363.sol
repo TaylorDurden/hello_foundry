@@ -1,139 +1,47 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
+
 import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC165, ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {IERC1363Errors} from "../interfaces/IERC1363Errors.sol";
+import "../interfaces/IERC1363.sol";
 import "../interfaces/IERC1363Receiver.sol";
 import "../interfaces/IERC1363Spender.sol";
-import "../interfaces/IERC1363.sol";
 
-abstract contract ERC1363 is ERC20, IERC1363 {
-    // uint256 public totalSupply;
-    // mapping(address => uint256) public balanceOf;
-    // mapping(address => mapping(address => uint256)) public allowance;
-    // string public name;
-    // string public symbol;
-    // uint8 public immutable decimals;
-
-    // constructor(
-    //     string memory _name,
-    //     string memory _symbol,
-    //     uint8 _decimals,
-    //     uint256 _totalSupply
-    // ) {
-    //     name = _name;
-    //     symbol = _symbol;
-    //     decimals = _decimals;
-    //     totalSupply = _totalSupply;
-    //     balanceOf[msg.sender] = totalSupply;
-    // }
-
-    // function transfer(
-    //     address recipient,
-    //     uint256 amount
-    // ) external returns (bool) {
-    //     return _transfer(recipient, amount);
-    // }
-
-    // function _transfer(
-    //     address recipient,
-    //     uint256 amount
-    // ) internal returns (bool) {
-    //     require(balanceOf[msg.sender] >= amount, "Insufficient balance");
-
-    //     balanceOf[msg.sender] -= amount;
-    //     balanceOf[recipient] += amount;
-    //     emit Transfer(msg.sender, recipient, amount);
-    //     return true;
-    // }
-
-    // function approve(address spender, uint256 amount) external returns (bool) {
-    //     return _approve(spender, amount);
-    // }
-
-    // function _approve(address spender, uint256 amount) internal returns (bool) {
-    //     allowance[msg.sender][spender] = amount;
-    //     emit Approval(msg.sender, spender, amount);
-    //     return true;
-    // }
-
-    // function transferFrom(
-    //     address from,
-    //     address to,
-    //     uint256 amount
-    // ) external returns (bool) {
-    //     require(balanceOf[from] >= amount, "Insufficient balance");
-    //     require(allowance[from][msg.sender] >= amount, "Allowance exceeded");
-
-    //     balanceOf[from] -= amount;
-    //     balanceOf[to] += amount;
-    //     allowance[from][msg.sender] -= amount;
-    //     emit Transfer(from, to, amount);
-    //     return true;
-    // }
-
-    /**
-     * @dev Indicates a failure with the token `receiver`. Used in transfers.
-     * @param receiver Address to which tokens are being transferred.
-     */
-    error ERC1363InvalidReceiver(address receiver);
-
-    /**
-     * @dev Indicates a failure with the token `spender`. Used in approvals.
-     * @param spender Address that may be allowed to operate on tokens without being their owner.
-     */
-    error ERC1363InvalidSpender(address spender);
-
-    /**
-     * @dev Indicates a failure within the {transfer} part of a transferAndCall operation.
-     * @param receiver Address to which tokens are being transferred.
-     * @param value Amount of tokens to be transferred.
-     */
-    error ERC1363TransferFailed(address receiver, uint256 value);
-
-    /**
-     * @dev Indicates a failure within the {transferFrom} part of a transferFromAndCall operation.
-     * @param sender Address from which to send tokens.
-     * @param receiver Address to which tokens are being transferred.
-     * @param value Amount of tokens to be transferred.
-     */
-    error ERC1363TransferFromFailed(
-        address sender,
-        address receiver,
+abstract contract ERC1363 is ERC20, ERC165, IERC1363, IERC1363Errors {
+    function transferAndCall(
+        address to,
         uint256 value
-    );
-
-    /**
-     * @dev Indicates a failure within the {approve} part of a approveAndCall operation.
-     * @param spender Address which will spend the funds.
-     * @param value Amount of tokens to be spent.
-     */
-    error ERC1363ApproveFailed(address spender, uint256 value);
-
-    function transferAndCall(address to, uint256 value) public returns (bool) {
-        transferAndCall(to, value, "");
+    ) public virtual returns (bool) {
+        return transferAndCall(to, value, "");
     }
 
     function transferAndCall(
         address to,
         uint256 value,
-        bytes calldata data
-    ) public override returns (bool) {
+        bytes memory data
+    ) public virtual returns (bool) {
+        if (!transfer(to, value)) {
+            revert ERC1363TransferFailed(to, value);
+        }
         _checkOnTransferReceived(msg.sender, to, value, data);
+        return true;
     }
 
     function transferFromAndCall(
         address from,
         address to,
         uint256 value
-    ) public override returns (bool) {
-        transferFromAndCall(from, to, value, "");
+    ) public virtual override returns (bool) {
+        return transferFromAndCall(from, to, value, "");
     }
 
     function transferFromAndCall(
         address from,
         address to,
         uint256 value,
-        bytes calldata data
-    ) public override returns (bool) {
+        bytes memory data
+    ) public virtual override returns (bool) {
         if (!transferFrom(from, to, value)) {
             revert ERC1363TransferFromFailed(from, to, value);
         }
@@ -144,15 +52,15 @@ abstract contract ERC1363 is ERC20, IERC1363 {
     function approveAndCall(
         address spender,
         uint256 value
-    ) public override returns (bool) {
-        approveAndCall(spender, value, "");
+    ) public virtual override returns (bool) {
+        return approveAndCall(spender, value, "");
     }
 
     function approveAndCall(
         address spender,
         uint256 value,
-        bytes calldata data
-    ) public override returns (bool) {
+        bytes memory data
+    ) public virtual override returns (bool) {
         if (!approve(spender, value)) {
             revert ERC1363ApproveFailed(spender, value);
         }
@@ -162,7 +70,7 @@ abstract contract ERC1363 is ERC20, IERC1363 {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view override returns (bool) {
+    ) public view virtual override(ERC165, IERC165) returns (bool) {
         return interfaceId == type(IERC1363).interfaceId;
     }
 

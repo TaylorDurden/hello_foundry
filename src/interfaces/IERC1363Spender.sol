@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
 /**
  * @title ERC1363Spender
  * @dev Interface for any contract that wants to support `approveAndCall` from ERC-1363 token contracts.

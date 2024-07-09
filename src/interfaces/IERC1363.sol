@@ -1,8 +1,8 @@
-import "./IERC20.sol";
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
 
-interface IERC165 {
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
-}
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 /**
  * @title ERC1363
