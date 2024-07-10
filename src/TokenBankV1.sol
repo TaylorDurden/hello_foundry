@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
+import {IERC165, ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 import "./interfaces/IERC1363.sol";
+
 import "./interfaces/IERC1363Receiver.sol";
 import "./interfaces/IERC1363Spender.sol";
 
@@ -29,6 +31,14 @@ abstract contract ERC1363Guardian is IERC1363Receiver, IERC1363Spender {
         bytes data
     );
 
+    modifier onlyIERC1363() {
+        require(
+            IERC165(msg.sender).supportsInterface(type(IERC1363).interfaceId),
+            "Caller does not implement IERC1363"
+        );
+        _;
+    }
+
     /*
      * @inheritdoc IERC1363Receiver
      */
@@ -37,7 +47,7 @@ abstract contract ERC1363Guardian is IERC1363Receiver, IERC1363Spender {
         address from,
         uint256 value,
         bytes calldata data
-    ) external returns (bytes4) {
+    ) external onlyIERC1363 returns (bytes4) {
         // The ERC-1363 contract is always the caller.
         address token = msg.sender;
 
@@ -55,7 +65,10 @@ abstract contract ERC1363Guardian is IERC1363Receiver, IERC1363Spender {
         address owner,
         uint256 value,
         bytes calldata data
-    ) external returns (bytes4) {
+    ) external onlyIERC1363 returns (bytes4) {
+        // Ensure the caller is a contract
+        require(msg.sender.code.length > 0, "Caller must be a contract");
+
         // The ERC-1363 contract is always the caller.
         address token = msg.sender;
 

@@ -18,6 +18,21 @@ contract TokenBankV1Test is Test {
     MockERC1363 public tokenB;
     address public user;
 
+    event TokensReceived(
+        address indexed token,
+        address indexed operator,
+        address indexed from,
+        uint256 value,
+        bytes data
+    );
+
+    event TokensApproved(
+        address indexed token,
+        address indexed owner,
+        uint256 value,
+        bytes data
+    );
+
     function setUp() public {
         bank = new TokenBankV1();
         tokenA = new MockERC1363("TokenA", "TKA");
@@ -68,5 +83,19 @@ contract TokenBankV1Test is Test {
         vm.stopPrank();
 
         assertEq(bank.userTokenBalance(user, address(tokenA)), 100 * 10 ** 18);
+    }
+
+    function testOnlyIERC1363() public {
+        vm.startPrank(user);
+
+        // Successful call from a contract implementing IERC1363
+        tokenA.transferAndCall(address(bank), 100 * 10 ** 18);
+        assertEq(bank.userTokenBalance(user, address(tokenA)), 100 * 10 ** 18);
+
+        // Unsuccessful call from an address that is not a contract
+        vm.expectRevert();
+        bank.onTransferReceived(user, user, 100 * 10 ** 18, "");
+
+        vm.stopPrank();
     }
 }
