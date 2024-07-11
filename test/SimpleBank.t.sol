@@ -6,6 +6,8 @@ import "forge-std/Test.sol";
 contract Bank {
     mapping(address => uint) public balanceOf;
 
+    error MyError(uint256 a);
+
     event Deposit(address indexed user, uint amount);
 
     function depositETH() external payable {
@@ -18,6 +20,7 @@ contract Bank {
 contract BankTest is Test {
     Bank bank;
     address user;
+    event Deposit(address indexed user, uint amount);
 
     function setUp() public {
         bank = new Bank();
@@ -34,7 +37,8 @@ contract BankTest is Test {
 
         // Expect the Deposit event
         vm.expectEmit(true, false, false, true);
-        emit Bank.Deposit(address(user), amount);
+
+        emit Deposit(address(user), amount);
         bank.depositETH{value: amount}();
 
         // Verify the balance
