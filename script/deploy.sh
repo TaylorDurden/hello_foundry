@@ -30,11 +30,6 @@ if [[ -z "$SEPOLIA_RPC_URL" || -z "$ETHERSCAN_API_KEY" || -z "$CHAIN_ID" ]]; the
   exit 1
 fi
 
-if [[ -z "$PRIVATE_KEY" ]]; then
-  echo "Can not load the private key from keystore..."
-  exit 1
-fi
-
 # deploy
 forge script "$SCRIPT_FILE" \
   --rpc-url "$SEPOLIA_RPC_URL" \
