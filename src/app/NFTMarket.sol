@@ -75,6 +75,7 @@ contract NFTMarket is IERC721Receiver, INFTMarketEvents, INFTMarketErrors {
         if (listing.seller == msg.sender) {
             revert NotAllowed(msg.sender, listing.seller, tokenId);
         }
+        delete userNFTListing[address(nft)][tokenId];
         // Transfer the payment tokens from the buyer to the seller
         if (
             !IERC20(listing.token).transferFrom(
@@ -86,7 +87,6 @@ contract NFTMarket is IERC721Receiver, INFTMarketEvents, INFTMarketErrors {
             revert PaymentFailed(msg.sender, listing.seller, listing.price);
         }
 
-        delete userNFTListing[address(nft)][tokenId];
         nft.transferFrom(address(this), msg.sender, tokenId);
 
         return true;
