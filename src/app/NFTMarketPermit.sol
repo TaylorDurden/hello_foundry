@@ -14,8 +14,6 @@ contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
     string private constant SIGNING_DOMAIN = "NFT-Market";
     string private constant SIGNATURE_VERSION = "1";
 
-    mapping(bytes32 => bool) public fullfiledListing;
-
     bytes32 private constant PERMIT_SELL_TYPE_HASH =
         keccak256(
             "PermitSell(address seller,address nft,uint256 tokenId,address token,uint256 price,uint256 deadline,uint256 nonce)"
