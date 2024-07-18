@@ -33,7 +33,7 @@ interface INFTMarketEvents {
 
 interface INFTMarketErrors {
     error PaymentFailed(address buyer, address seller, uint256 price);
-    error NotListedForSale(uint256 tokenId);
+    error NotForSale(uint256 tokenId);
     error NotAllowed(address buyer, address seller, uint256 tokenId);
 }
 
@@ -69,7 +69,7 @@ contract NFTMarket is IERC721Receiver, INFTMarketEvents, INFTMarketErrors {
 
         // Ensure the NFT is listed for sale
         if (listing.seller == address(0)) {
-            revert NotListedForSale(tokenId);
+            revert NotForSale(tokenId);
         }
         // Ensure the NFT is listed for sale
         if (listing.seller == msg.sender) {

@@ -2,6 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 import {TokenPermit} from "../src/ERC20/ERC20Permit.sol";
 import {TokenBankPermit} from "../src/TokenBankV2.sol";
 import {SigUtils} from "../src/utils/SignUtils.sol";
@@ -23,10 +25,10 @@ contract TokenBankPermitTest is Test {
     SigUtils sigUtils;
 
     uint256 internal ownerPrivateKey;
-    uint256 internal invalidSpenderPrivateKey;
+    uint256 internal invalidDepositerPrivateKey;
 
     address internal owner;
-    address internal invalidSpender;
+    address internal invalidDepositer;
 
     /**
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
@@ -48,7 +50,9 @@ contract TokenBankPermitTest is Test {
 
     function setUp() public {
         (owner, ownerPrivateKey) = makeAddrAndKey("owner");
-        (invalidSpender, invalidSpenderPrivateKey) = makeAddrAndKey("spender");
+        (invalidDepositer, invalidDepositerPrivateKey) = makeAddrAndKey(
+            "spender"
+        );
 
         vm.prank(owner);
         token = new TokenPermit("MyToken", "MTK");
@@ -90,8 +94,8 @@ contract TokenBankPermitTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
 
         vm.expectRevert();
-        vm.prank(invalidSpender);
-        tokenBank.permitDeposit(_amount, 2 days, v, r, s);
+        vm.prank(invalidDepositer);
+        tokenBank.permitDeposit(_amount, _deadline, v, r, s);
     }
 
     function test_should_error_ERC2612ExpiredSignature() public {
