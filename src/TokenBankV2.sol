@@ -6,6 +6,7 @@ import {IERC2612} from "@openzeppelin/contracts/interfaces/IERC2612.sol";
 
 contract TokenBankPermit {
     IERC20 public token;
+    mapping(address => mapping(address => uint256)) public userTokenBalance;
 
     constructor(IERC20 _token) {
         token = _token;
@@ -18,6 +19,7 @@ contract TokenBankPermit {
         bytes32 r,
         bytes32 s
     ) public {
+        userTokenBalance[msg.sender][address(token)] += amount;
         IERC2612(address(token)).permit(
             msg.sender,
             address(this),

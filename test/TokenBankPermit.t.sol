@@ -147,6 +147,7 @@ contract TokenBankPermitTest is Test {
         uint256 allowanceAfter = token.allowance(owner, _spender);
         assertEq(ownerBalanceBefore - _amount, ownerBalanceAfter);
         assertEq(spenderBalanceBefore + _amount, spenderBalanceAfter);
+        assertEq(tokenBank.userTokenBalance(owner, address(token)), _amount);
         assertEq(allowanceBefore, allowanceAfter);
         assertEq(allowanceBefore, 0);
         assertEq(allowanceBefore, 0);
