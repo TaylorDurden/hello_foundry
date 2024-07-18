@@ -137,6 +137,37 @@ contract NFTMarketPermitTest is Test {
         );
     }
 
+    function testExpiredSellListingSignature() public {
+        // Setup: list the NFT with an expired signature
+        bytes memory sellListingSignature = _getSellListingSignature();
+
+        vm.startPrank(seller);
+        nft.approve(address(market), tokenId);
+        market.list(nft, tokenId, address(token), nftPrice);
+        vm.stopPrank();
+
+        bytes memory whiteListSignature = _getWhiteListSignature();
+        bytes memory eip2612Signature = _getEIP2612Signature();
+
+        vm.warp(2 days);
+        vm.expectRevert(); // expecting revert due to expired signature
+        vm.prank(buyer);
+        market.permitBuy(
+            NFTMarketPermit.SellListing(
+                seller,
+                address(nft),
+                tokenId,
+                address(token),
+                nftPrice,
+                deadline
+            ),
+            NFTMarketPermit.BuyPermit(deadline),
+            whiteListSignature,
+            sellListingSignature,
+            eip2612Signature
+        );
+    }
+
     function _getEIP2612Signature() private view returns (bytes memory) {
         bytes32 eip2612Digest = keccak256(
             abi.encodePacked(
