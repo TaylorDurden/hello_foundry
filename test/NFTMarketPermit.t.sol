@@ -168,4 +168,9 @@ contract NFTMarketPermitTest is Test {
         bytes memory sellListingSignature = abi.encodePacked(r, s, v);
         return sellListingSignature;
     }
+
+    function invariant_nftmarket_balance_allowance_is_0() public {
+        assertEq(token.balanceOf(address(market)), 0);
+        assertEq(token.allowance(owner, address(market)), 0);
+    }
 }
