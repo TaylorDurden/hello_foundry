@@ -10,11 +10,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {NFTMarket} from "./NFTMarket.sol";
 
-import "forge-std/Test.sol";
-
 contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
     string private constant SIGNING_DOMAIN = "NFT-Market";
     string private constant SIGNATURE_VERSION = "1";
+
+    mapping(bytes32 => bool) public fullfiledListing;
 
     bytes32 private constant PERMIT_SELL_TYPE_HASH =
         keccak256(
@@ -28,6 +28,7 @@ contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
     error InvalidWhiteListSigner(address signer);
     error InvalidListingSigner(address signer);
     error SignatureExpired(bytes signature);
+    error OrderAlreadyFullfiled();
 
     struct SellListing {
         address seller;
@@ -97,41 +98,6 @@ contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
         );
     }
 
-    // function listPermit(
-    //     SellListing memory sellListing,
-    //     bytes memory signatureSellListing
-    // ) public {
-    //     // Ensure the signature is not expired
-    //     console.log("11111");
-    //     sellListing.deadline = deadline;
-    //     sellListing.nonce = nonce;
-    //     console.log("deadline:", sellListing.deadline);
-    //     console.log("nonce:", sellListing.nonce);
-    //     require(
-    //         block.timestamp <= sellListing.deadline,
-    //         "ERC721 permit signature expired"
-    //     );
-    //     console.log("22222");
-    //     _verifySellListingSignature(signatureSellListing, sellListing);
-    //     console.log("33333");
-    //     // Transfer the NFT from the owner to the marketplace contract
-    //     IERC721(sellListing.nft).safeTransferFrom(
-    //         msg.sender,
-    //         address(this),
-    //         sellListing.tokenId,
-    //         abi.encode(sellListing.token, sellListing.price)
-    //     );
-
-    //     // Emit an event for the listing
-    //     emit NFTListed(
-    //         address(sellListing.nft),
-    //         sellListing.tokenId,
-    //         msg.sender,
-    //         sellListing.price,
-    //         sellListing.token
-    //     );
-    // }
-
     function _verifyWhiteListSignature(
         bytes memory _signatureWhiteList
     ) private view {
@@ -148,7 +114,7 @@ contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
 
         // Ensure the NFT is listed for sale
         if (listing.seller == address(0)) {
-            revert NotListedForSale(tokenId);
+            revert NotForSale(tokenId);
         }
         // Ensure the NFT is listed for sale
         if (listing.seller == msg.sender) {
@@ -175,7 +141,7 @@ contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
                 )
             )
         );
-        // check digest used
+
         address signer = ECDSA.recover(digest, _signatureSellListing);
         if (signer != _sellListing.seller) revert InvalidListingSigner(signer);
     }

@@ -21,6 +21,7 @@ contract TestToken is TokenPermit {
         _mint(to, amount);
     }
 }
+error NotForSale(uint256 tokenId);
 
 contract NFTMarketPermitTest is Test {
     NFTMarketPermit public market;
@@ -60,26 +61,6 @@ contract NFTMarketPermitTest is Test {
         token.mint(buyer, 10000 ether);
     }
 
-    // function testListPermit() public {
-    //     bytes memory sellListingSignature = _getSellListingSignature();
-
-    //     vm.prank(seller);
-    //     market.listPermit(
-    //         NFTMarketPermit.SellListing(
-    //             seller,
-    //             address(nft),
-    //             1,
-    //             address(token),
-    //             1000 ether,
-    //             deadline,
-    //             market.nonces(owner)
-    //         ),
-    //         sellListingSignature
-    //     );
-
-    //     assertEq(nft.ownerOf(1), address(market));
-    // }
-
     function testPermitBuy() public {
         // Setup: list the NFT
         bytes memory sellListingSignature = _getSellListingSignature();
@@ -108,6 +89,52 @@ contract NFTMarketPermitTest is Test {
         );
 
         assertEq(nft.ownerOf(1), buyer);
+    }
+
+    function testSoldListingRevertNotForSale() public {
+        // Setup: list the NFT and perform a valid buy
+        bytes memory sellListingSignature = _getSellListingSignature();
+        bytes memory whiteListSignature = _getWhiteListSignature();
+        bytes memory eip2612Signature = _getEIP2612Signature();
+
+        vm.startPrank(seller);
+        nft.approve(address(market), tokenId);
+        market.list(nft, tokenId, address(token), nftPrice);
+        vm.stopPrank();
+
+        vm.prank(buyer);
+        market.permitBuy(
+            NFTMarketPermit.SellListing(
+                seller,
+                address(nft),
+                tokenId,
+                address(token),
+                nftPrice,
+                deadline
+            ),
+            NFTMarketPermit.BuyPermit(deadline),
+            whiteListSignature,
+            sellListingSignature,
+            eip2612Signature
+        );
+
+        // Try to buy again with the same signature
+        vm.prank(buyer);
+        vm.expectRevert(abi.encodeWithSelector(NotForSale.selector, tokenId)); // expecting revert
+        market.permitBuy(
+            NFTMarketPermit.SellListing(
+                seller,
+                address(nft),
+                tokenId,
+                address(token),
+                nftPrice,
+                deadline
+            ),
+            NFTMarketPermit.BuyPermit(deadline),
+            whiteListSignature,
+            sellListingSignature,
+            eip2612Signature
+        );
     }
 
     function _getEIP2612Signature() private view returns (bytes memory) {
