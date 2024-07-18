@@ -4,25 +4,30 @@ pragma solidity ^0.8.13;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
 import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {NFTMarket} from "./NFTMarket.sol";
 
-contract NFTMarketPerimit is NFTMarket, Ownable, EIP712 {
-    mapping(address => bool) public whiteList;
-    address immutable WHITE_LIST_SIGNER;
+import "forge-std/Test.sol";
 
+contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
     string private constant SIGNING_DOMAIN = "NFT-Market";
     string private constant SIGNATURE_VERSION = "1";
 
-    bytes private constant PERMIT_SELL_TYPE_HASH =
-        "PermitSell(address seller,address nft,uint256 tokenId,address token,uint256 price)";
-    bytes private constant WHITE_LIST_TYPE_HASH =
-        "WhiteList(address signer, address user)";
+    bytes32 private constant PERMIT_SELL_TYPE_HASH =
+        keccak256(
+            "PermitSell(address seller,address nft,uint256 tokenId,address token,uint256 price,uint256 deadline,uint256 nonce)"
+        );
+    bytes32 private constant WHITE_LIST_TYPE_HASH =
+        keccak256(
+            "WhiteList(address signer,address user,uint256 nonce,uint256 deadline)"
+        );
 
     error InvalidWhiteListSigner(address signer);
     error InvalidListingSigner(address signer);
+    error SignatureExpired(bytes signature);
 
     struct SellListing {
         address seller;
@@ -33,34 +38,51 @@ contract NFTMarketPerimit is NFTMarket, Ownable, EIP712 {
         uint256 deadline;
     }
 
+    struct BuyPermit {
+        uint256 deadline;
+    }
+
     struct WhiteList {
-        address owner;
         address user;
     }
 
     constructor()
         Ownable(msg.sender)
         EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION)
-    {
-        WHITE_LIST_SIGNER = msg.sender;
+    {}
+
+    function getPermitSellTypeHash() public pure returns (bytes32) {
+        return PERMIT_SELL_TYPE_HASH;
+    }
+
+    function getWhiteListTypeHash() public pure returns (bytes32) {
+        return WHITE_LIST_TYPE_HASH;
+    }
+
+    function nonces(
+        address owner
+    ) public view virtual override(Nonces) returns (uint256) {
+        return super.nonces(owner);
+    }
+
+    function DOMAIN_SEPARATOR() external view virtual returns (bytes32) {
+        return _domainSeparatorV4();
     }
 
     function permitBuy(
         SellListing calldata sellListing,
+        BuyPermit calldata buyPermit,
         bytes calldata signatureWhiteList,
         bytes calldata signatureSellListing,
         bytes calldata signatureEIP2612
     ) public {
-        _verifyWhiteListSignature(
-            signatureWhiteList,
-            WhiteList(owner(), msg.sender)
-        );
+        _verifyWhiteListSignature(signatureWhiteList);
         _checkListing(sellListing.nft, sellListing.tokenId);
 
         _verifySellListingSignature(signatureSellListing, sellListing);
         delete userNFTListing[sellListing.nft][sellListing.tokenId];
         // Decode and verify ERC20 permit signature
-        _permitTokenTranfer(signatureEIP2612, sellListing);
+        _permitTokenTranfer(signatureEIP2612, sellListing, buyPermit);
 
         IERC721(sellListing.nft).transferFrom(
             address(this),
@@ -75,48 +97,47 @@ contract NFTMarketPerimit is NFTMarket, Ownable, EIP712 {
         );
     }
 
-    function listPermit(
-        SellListing calldata sellListing,
-        bytes memory signatureSellListing
-    ) public {
-        // Ensure the signature is not expired
-        require(
-            block.timestamp <= sellListing.deadline,
-            "ERC721 permit signature expired"
-        );
+    // function listPermit(
+    //     SellListing memory sellListing,
+    //     bytes memory signatureSellListing
+    // ) public {
+    //     // Ensure the signature is not expired
+    //     console.log("11111");
+    //     sellListing.deadline = deadline;
+    //     sellListing.nonce = nonce;
+    //     console.log("deadline:", sellListing.deadline);
+    //     console.log("nonce:", sellListing.nonce);
+    //     require(
+    //         block.timestamp <= sellListing.deadline,
+    //         "ERC721 permit signature expired"
+    //     );
+    //     console.log("22222");
+    //     _verifySellListingSignature(signatureSellListing, sellListing);
+    //     console.log("33333");
+    //     // Transfer the NFT from the owner to the marketplace contract
+    //     IERC721(sellListing.nft).safeTransferFrom(
+    //         msg.sender,
+    //         address(this),
+    //         sellListing.tokenId,
+    //         abi.encode(sellListing.token, sellListing.price)
+    //     );
 
-        _verifySellListingSignature(signatureSellListing, sellListing);
-
-        // Transfer the NFT from the owner to the marketplace contract
-        IERC721(sellListing.nft).safeTransferFrom(
-            msg.sender,
-            address(this),
-            sellListing.tokenId,
-            abi.encode(sellListing.token, sellListing.price)
-        );
-
-        // Emit an event for the listing
-        emit NFTListed(
-            address(sellListing.nft),
-            sellListing.tokenId,
-            msg.sender,
-            sellListing.price,
-            sellListing.token
-        );
-    }
+    //     // Emit an event for the listing
+    //     emit NFTListed(
+    //         address(sellListing.nft),
+    //         sellListing.tokenId,
+    //         msg.sender,
+    //         sellListing.price,
+    //         sellListing.token
+    //     );
+    // }
 
     function _verifyWhiteListSignature(
-        bytes memory _signatureWhiteList,
-        WhiteList memory _whiteList
+        bytes memory _signatureWhiteList
     ) private view {
+        WhiteList memory _whiteList = WhiteList({user: msg.sender});
         bytes32 digest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(
-                    keccak256(WHITE_LIST_TYPE_HASH),
-                    _whiteList.owner,
-                    _whiteList.user
-                )
-            )
+            keccak256(abi.encode(WHITE_LIST_TYPE_HASH, _whiteList.user))
         );
         address signer = ECDSA.recover(digest, _signatureWhiteList);
         if (signer != owner()) revert InvalidWhiteListSigner(signer);
@@ -139,36 +160,49 @@ contract NFTMarketPerimit is NFTMarket, Ownable, EIP712 {
         bytes memory _signatureSellListing,
         SellListing memory _sellListing
     ) private view {
+        require(_sellListing.deadline >= block.timestamp, "");
         bytes32 digest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
-                    keccak256(PERMIT_SELL_TYPE_HASH),
+                    PERMIT_SELL_TYPE_HASH,
                     _sellListing.seller,
                     _sellListing.nft,
                     _sellListing.tokenId,
                     _sellListing.token,
-                    _sellListing.price
+                    _sellListing.price,
+                    _sellListing.deadline,
+                    nonces(_sellListing.seller)
                 )
             )
         );
+        // check digest used
         address signer = ECDSA.recover(digest, _signatureSellListing);
         if (signer != _sellListing.seller) revert InvalidListingSigner(signer);
     }
 
     function _permitTokenTranfer(
         bytes memory _signatureEIP2612,
-        SellListing memory _sellListing
+        SellListing calldata _sellListing,
+        BuyPermit calldata buyPermit
     ) private {
         // Decode and verify ERC20 permit signature
-        (uint8 v, bytes32 r, bytes32 s, uint256 deadline) = abi.decode(
-            _signatureEIP2612,
-            (uint8, bytes32, bytes32, uint256)
-        );
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        // ecrecover takes the signature parameters, and the only way to get them
+        // currently is to use assembly.
+        /// @solidity memory-safe-assembly
+        assembly {
+            r := mload(add(_signatureEIP2612, 0x20))
+            s := mload(add(_signatureEIP2612, 0x40))
+            v := byte(0, mload(add(_signatureEIP2612, 0x60)))
+        }
+
         IERC20Permit(_sellListing.token).permit(
             msg.sender,
             address(this),
             _sellListing.price,
-            deadline,
+            buyPermit.deadline,
             v,
             r,
             s
