@@ -39,6 +39,8 @@ contract NFTMarketPermitTest is Test {
     uint256 public nftPrice;
     uint256 public deadline;
 
+    address public sellToken;
+
     bytes32 public eip2612PermitTypeHash =
         keccak256(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
@@ -59,6 +61,7 @@ contract NFTMarketPermitTest is Test {
         tokenId = 1;
         nftPrice = 10 ether;
         token.mint(buyer, 10000 ether);
+        sellToken = address(token);
     }
 
     function testPermitBuy() public {
@@ -88,6 +91,43 @@ contract NFTMarketPermitTest is Test {
         );
 
         assertEq(nft.ownerOf(1), buyer);
+    }
+
+    function testPermitBuyWithETH() public {
+        vm.deal(buyer, 2 ether);
+        nftPrice = 1 ether;
+        sellToken = address(0);
+        assertEq(buyer.balance, 2 ether);
+        assertEq(sellToken, address(0));
+        // Setup: list the NFT
+        bytes memory sellListingSignature = _getSellListingSignature();
+        bytes memory whiteListSignature = _getWhiteListSignature();
+        bytes memory eip2612Signature = _getEIP2612Signature();
+
+        vm.startPrank(seller);
+        nft.setApprovalForAll(address(market), true);
+        vm.stopPrank();
+
+        vm.prank(buyer);
+        market.permitBuy{value: nftPrice}(
+            NFTMarketPermit.SellListing(
+                seller,
+                address(nft),
+                tokenId,
+                sellToken,
+                nftPrice,
+                deadline
+            ),
+            NFTMarketPermit.BuyPermit(deadline),
+            whiteListSignature,
+            sellListingSignature,
+            eip2612Signature
+        );
+
+        assertEq(nft.ownerOf(1), buyer);
+        assertEq(address(market).balance, 0 ether);
+        assertEq(buyer.balance, 1 ether);
+        assertEq(seller.balance, 1 ether);
     }
 
     function testSoldListingCannotBuyAgain() public {
@@ -212,7 +252,7 @@ contract NFTMarketPermitTest is Test {
                         market.getPermitSellTypeHash(),
                         seller,
                         address(nft),
-                        address(token),
+                        sellToken,
                         nftPrice,
                         deadline
                     )

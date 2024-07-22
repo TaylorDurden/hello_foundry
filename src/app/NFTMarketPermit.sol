@@ -88,7 +88,7 @@ contract NFTMarketPermit is Ownable, EIP712, Nonces {
         bytes calldata signatureWhiteList,
         bytes calldata signatureSellListing,
         bytes calldata signatureEIP2612
-    ) public {
+    ) public payable {
         _verifyWhiteListSignature(signatureWhiteList);
 
         _verifySellListingSignature(signatureSellListing, sellListing);
@@ -174,28 +174,33 @@ contract NFTMarketPermit is Ownable, EIP712, Nonces {
             s := mload(add(_signatureEIP2612, 0x40))
             v := byte(0, mload(add(_signatureEIP2612, 0x60)))
         }
-
-        IERC20Permit(_sellListing.token).permit(
-            msg.sender,
-            address(this),
-            _sellListing.price,
-            buyPermit.deadline,
-            v,
-            r,
-            s
-        );
-
-        // Transfer the payment tokens from the buyer to the seller
-        bool transfered = IERC20(_sellListing.token).transferFrom(
-            msg.sender,
-            _sellListing.seller,
-            _sellListing.price
-        );
-        if (!transfered)
-            revert PaymentFailed(
+        if (_sellListing.token == address(0)) {
+            (bool success, ) = _sellListing.seller.call{
+                value: _sellListing.price
+            }("");
+            require(success);
+        } else {
+            IERC20Permit(_sellListing.token).permit(
+                msg.sender,
+                address(this),
+                _sellListing.price,
+                buyPermit.deadline,
+                v,
+                r,
+                s
+            );
+            // Transfer the payment tokens from the buyer to the seller
+            bool transfered = IERC20(_sellListing.token).transferFrom(
                 msg.sender,
                 _sellListing.seller,
                 _sellListing.price
             );
+            if (!transfered)
+                revert PaymentFailed(
+                    msg.sender,
+                    _sellListing.seller,
+                    _sellListing.price
+                );
+        }
     }
 }
