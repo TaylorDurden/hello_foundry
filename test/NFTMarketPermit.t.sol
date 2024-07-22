@@ -21,7 +21,7 @@ contract TestToken is TokenPermit {
         _mint(to, amount);
     }
 }
-error NotForSale(uint256 tokenId);
+error OrderAlreadyFullfiled(address nft, uint256 tokenId);
 
 contract NFTMarketPermitTest is Test {
     NFTMarketPermit public market;
@@ -68,8 +68,7 @@ contract NFTMarketPermitTest is Test {
         bytes memory eip2612Signature = _getEIP2612Signature();
 
         vm.startPrank(seller);
-        nft.approve(address(market), tokenId);
-        market.list(nft, tokenId, address(token), nftPrice);
+        nft.setApprovalForAll(address(market), true);
         vm.stopPrank();
 
         vm.prank(buyer);
@@ -91,15 +90,14 @@ contract NFTMarketPermitTest is Test {
         assertEq(nft.ownerOf(1), buyer);
     }
 
-    function testSoldListingRevertNotForSale() public {
+    function testSoldListingCannotBuyAgain() public {
         // Setup: list the NFT and perform a valid buy
         bytes memory sellListingSignature = _getSellListingSignature();
         bytes memory whiteListSignature = _getWhiteListSignature();
         bytes memory eip2612Signature = _getEIP2612Signature();
 
         vm.startPrank(seller);
-        nft.approve(address(market), tokenId);
-        market.list(nft, tokenId, address(token), nftPrice);
+        nft.setApprovalForAll(address(market), true);
         vm.stopPrank();
 
         vm.prank(buyer);
@@ -120,7 +118,9 @@ contract NFTMarketPermitTest is Test {
 
         // Try to buy again with the same signature
         vm.prank(buyer);
-        vm.expectRevert(abi.encodeWithSelector(NotForSale.selector, tokenId)); // expecting revert
+        vm.expectRevert(
+            abi.encodeWithSelector(OrderAlreadyFullfiled.selector, nft, tokenId)
+        ); // expecting revert
         market.permitBuy(
             NFTMarketPermit.SellListing(
                 seller,
@@ -142,8 +142,7 @@ contract NFTMarketPermitTest is Test {
         bytes memory sellListingSignature = _getSellListingSignature();
 
         vm.startPrank(seller);
-        nft.approve(address(market), tokenId);
-        market.list(nft, tokenId, address(token), nftPrice);
+        nft.setApprovalForAll(address(market), true);
         vm.stopPrank();
 
         bytes memory whiteListSignature = _getWhiteListSignature();
@@ -213,11 +212,9 @@ contract NFTMarketPermitTest is Test {
                         market.getPermitSellTypeHash(),
                         seller,
                         address(nft),
-                        tokenId,
                         address(token),
                         nftPrice,
-                        deadline,
-                        market.nonces(owner)
+                        deadline
                     )
                 )
             )

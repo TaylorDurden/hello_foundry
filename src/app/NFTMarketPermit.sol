@@ -10,23 +10,37 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {NFTMarket} from "./NFTMarket.sol";
 
-contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
-    string private constant SIGNING_DOMAIN = "NFT-Market";
+contract NFTMarketPermit is Ownable, EIP712, Nonces {
+    mapping(bytes32 => bool) public orderFullfiled;
+    string private constant SIGNING_DOMAIN = "NFT-Market-Permit";
     string private constant SIGNATURE_VERSION = "1";
 
     bytes32 private constant PERMIT_SELL_TYPE_HASH =
         keccak256(
-            "PermitSell(address seller,address nft,uint256 tokenId,address token,uint256 price,uint256 deadline,uint256 nonce)"
+            "PermitSell(address seller,address nft,address token,uint256 price,uint256 deadline)"
         );
     bytes32 private constant WHITE_LIST_TYPE_HASH =
-        keccak256(
-            "WhiteList(address signer,address user,uint256 nonce,uint256 deadline)"
-        );
+        keccak256("WhiteList(address user)");
 
     error InvalidWhiteListSigner(address signer);
     error InvalidListingSigner(address signer);
     error SignatureExpired(bytes signature);
-    error OrderAlreadyFullfiled();
+    error OrderAlreadyFullfiled(address nft, uint256 tokenId);
+    error PaymentFailed(address buyer, address seller, uint256 price);
+
+    event NFTListed(
+        address indexed nftAddress,
+        uint256 indexed tokenId,
+        address seller,
+        uint256 price,
+        address token
+    );
+    event NFTSold(
+        address indexed buyer,
+        address indexed nftAddress,
+        uint256 indexed tokenId,
+        uint256 price
+    );
 
     struct SellListing {
         address seller;
@@ -76,15 +90,13 @@ contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
         bytes calldata signatureEIP2612
     ) public {
         _verifyWhiteListSignature(signatureWhiteList);
-        _checkListing(sellListing.nft, sellListing.tokenId);
 
         _verifySellListingSignature(signatureSellListing, sellListing);
-        delete userNFTListing[sellListing.nft][sellListing.tokenId];
         // Decode and verify ERC20 permit signature
         _permitTokenTranfer(signatureEIP2612, sellListing, buyPermit);
 
         IERC721(sellListing.nft).transferFrom(
-            address(this),
+            sellListing.seller,
             msg.sender,
             sellListing.tokenId
         );
@@ -107,35 +119,36 @@ contract NFTMarketPermit is NFTMarket, Ownable, EIP712, Nonces {
         if (signer != owner()) revert InvalidWhiteListSigner(signer);
     }
 
-    function _checkListing(address nft, uint256 tokenId) private view {
-        Listing memory listing = userNFTListing[address(nft)][tokenId];
-
-        // Ensure the NFT is listed for sale
-        if (listing.seller == address(0)) {
-            revert NotForSale(tokenId);
-        }
-        // Ensure the NFT is listed for sale
-        if (listing.seller == msg.sender) {
-            revert NotAllowed(msg.sender, listing.seller, tokenId);
-        }
-    }
-
     function _verifySellListingSignature(
         bytes memory _signatureSellListing,
         SellListing memory _sellListing
-    ) private view {
+    ) private {
         require(_sellListing.deadline >= block.timestamp, "");
+        bytes32 orderHash = keccak256(
+            abi.encode(
+                _sellListing.nft,
+                _sellListing.tokenId,
+                _sellListing.token,
+                _sellListing.price,
+                _sellListing.deadline
+            )
+        );
+        if (orderFullfiled[orderHash])
+            revert OrderAlreadyFullfiled(
+                _sellListing.nft,
+                _sellListing.tokenId
+            );
+        orderFullfiled[orderHash] = true;
+
         bytes32 digest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
                     PERMIT_SELL_TYPE_HASH,
                     _sellListing.seller,
                     _sellListing.nft,
-                    _sellListing.tokenId,
                     _sellListing.token,
                     _sellListing.price,
-                    _sellListing.deadline,
-                    nonces(_sellListing.seller)
+                    _sellListing.deadline
                 )
             )
         );

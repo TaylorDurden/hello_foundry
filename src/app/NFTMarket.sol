@@ -88,7 +88,7 @@ contract NFTMarket is IERC721Receiver, INFTMarketEvents, INFTMarketErrors {
         }
 
         nft.transferFrom(address(this), msg.sender, tokenId);
-
+        emit NFTSold(msg.sender, address(nft), tokenId, listing.price);
         return true;
     }
 
