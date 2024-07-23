@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -30,7 +31,7 @@ contract StakingPool is Ownable {
     IERC20 public rntToken;
     esRNTToken public esRntToken;
 
-    uint256 public constant REWARD_RATE = 1 ether; // 1 esRNT per RNT per day
+    uint256 public constant REWARD_RATE = 1; // 1 esRNT per RNT per day
     uint256 public constant LOCK_DURATION = 30 days;
 
     struct Stake {
@@ -124,9 +125,15 @@ contract StakingPool is Ownable {
         LockedReward storage lockedReward = lockedRewards[_user];
 
         if (stakeData.amount > 0) {
+            console.log(
+                "(block.timestamp - stakeData.lastClaimed):",
+                (block.timestamp - stakeData.lastClaimed)
+            );
+            console.log("stakeData.lastClaimed:", stakeData.lastClaimed);
             uint256 pendingReward = (stakeData.amount *
                 REWARD_RATE *
                 (block.timestamp - stakeData.lastClaimed)) / 1 days;
+            console.log("pendingReward:", pendingReward);
             if (pendingReward > 0) {
                 esRntToken.transfer(_user, pendingReward);
                 lockedReward.amount += pendingReward;
