@@ -14,7 +14,7 @@ contract RNTToken is ERC20, Ownable {
         _mint(msg.sender, 1e9 * 10 ** decimals());
     }
 
-    function makeIDO(uint256 _amount, address _receiver) public {
+    function makeIDO(uint256 _amount, address _receiver) public onlyOwner {
         require(_amount <= balanceOf(msg.sender) / 10);
         transfer(_receiver, _amount);
     }
@@ -89,7 +89,7 @@ contract TokenIDO {
         uint256 userClaim = (PRESALE_TOKEN_AMOUNT * balanceOf[msg.sender]) /
             address(this).balance;
         balanceOf[msg.sender] = 0;
-        bool s = IDO_TOKEN.transfer(msg.sender, userClaim * 1e18);
+        bool s = IDO_TOKEN.transfer(msg.sender, userClaim * 1 ether);
         require(s);
     }
 
