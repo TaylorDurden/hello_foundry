@@ -3,14 +3,15 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RNTToken is ERC20, Ownable {
+contract RNTToken is ERC20Permit, Ownable {
     constructor(
         string memory _name,
         string memory _symbol
-    ) ERC20(_name, _symbol) Ownable(msg.sender) {
+    ) ERC20(_name, _symbol) ERC20Permit(_name) Ownable(msg.sender) {
         _mint(msg.sender, 1e9 * 10 ** decimals());
     }
 
@@ -61,6 +62,18 @@ contract TokenIDO {
     }
 
     modifier onlyIDOSucceed() {
+        // console.log("address(this).balance:", address(this).balance / 1 ether);
+        // console.log("MIN_PRESALE_TARGET:", MIN_PRESALE_TARGET / 1 ether);
+        // console.log("MAX_PRESALE_TARGET:", MAX_PRESALE_TARGET / 1 ether);
+        // console.log(
+        //     "address(this).balance >= MIN_PRESALE_TARGET && address(this).balance <= MAX_PRESALE_TARGET:",
+        //     address(this).balance >= MIN_PRESALE_TARGET &&
+        //         address(this).balance <= MAX_PRESALE_TARGET
+        // );
+        // console.log(
+        //     "block.timestamp >= END_TIME:",
+        //     block.timestamp >= END_TIME
+        // );
         if (
             !(address(this).balance >= MIN_PRESALE_TARGET &&
                 address(this).balance <= MAX_PRESALE_TARGET &&

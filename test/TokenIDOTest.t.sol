@@ -96,6 +96,10 @@ contract TokenIDOTest is Test {
         uint256 expectedTokenBalance = ((1 * 10 ** 6 * 0.01 ether) /
             (address(ido).balance)) * 10 ** token.decimals();
         assertEq(token.balanceOf(alice), expectedTokenBalance);
+        assertEq(
+            token.balanceOf(address(ido)),
+            1 * 10 ** 6 * 10 ** token.decimals() - token.balanceOf(alice)
+        );
     }
 
     function testRefund() public {
