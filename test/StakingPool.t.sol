@@ -107,13 +107,11 @@ contract StakingContractTest is Test {
         stakingContract.claimReward();
 
         assertEq(rntToken.balanceOf(alice), 1000 ether - 100 ether);
-        (uint256 lockingAmount, uint256 unlockTime) = stakingContract
-            .lockedRewards(alice);
+        (uint256 lockingAmount, ) = stakingContract.lockedRewards(alice);
         assertEq(lockingAmount, lockingAmount);
         // Alice converts all esRNT rewards to RNT
         vm.warp(block.timestamp + 1 days);
-        (uint256 rewardAmountConverted, uint256 burnAmount) = stakingContract
-            .takeReward();
+        (uint256 rewardAmountConverted, ) = stakingContract.takeReward();
         vm.stopPrank();
         console.log("rewardAmountConverted:", rewardAmountConverted);
         assertEq(esRntToken.balanceOf(alice), rewardAmountConverted);
