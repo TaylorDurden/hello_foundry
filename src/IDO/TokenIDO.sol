@@ -41,6 +41,10 @@ contract TokenIDO {
         OWNER = _owner;
     }
 
+    function getEndTime() public pure returns (uint256) {
+        return END_TIME;
+    }
+
     modifier checkValue() {
         require(
             msg.value >= 0.01 ether &&

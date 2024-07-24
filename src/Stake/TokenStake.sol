@@ -13,16 +13,16 @@ contract RNTToken is ERC20Permit, Ownable {
         ERC20Permit("RNT Token")
         Ownable(msg.sender)
     {
-        _mint(msg.sender, 10 ** 9 * 10 ** decimals());
+        _mint(msg.sender, 100 * 10 ** 9 * 10 ** decimals());
     }
 }
 
 contract esRNTToken is ERC20, Ownable {
     constructor() ERC20("esRNT Token", "esRNT") Ownable(msg.sender) {
-        _mint(msg.sender, 10 ** 9 * 10 ** decimals());
+        _mint(msg.sender, 100 * 10 ** 9 * 10 ** decimals());
     }
 
-    function burn(address account, uint256 amount) external onlyOwner {
+    function burn(address account, uint256 amount) external {
         _burn(account, amount);
     }
 }
@@ -77,71 +77,72 @@ contract StakingPool is Ownable {
             _s
         );
 
-        Stake storage stakeData = stakes[msg.sender];
-        _updateReward(msg.sender);
-
         rntToken.transferFrom(msg.sender, address(this), _amount);
-        stakeData.amount += _amount;
-        stakeData.rewardDebt = (stakeData.amount * REWARD_RATE) / 1 days;
+
+        Stake storage stake = stakes[msg.sender];
+        if (stake.amount > 0) {
+            uint256 pendingReward = _pendingReward(msg.sender);
+            stake.rewardDebt += pendingReward;
+        }
+        stake.amount += _amount;
+        stake.lastClaimed = block.timestamp;
 
         emit Staked(msg.sender, _amount);
     }
 
     function unstake(uint256 _amount) external {
-        Stake storage stakeData = stakes[msg.sender];
-        require(stakeData.amount >= _amount, "Insufficient staked amount");
+        Stake storage stake = stakes[msg.sender];
+        require(stake.amount >= _amount, "Insufficient staked amount");
 
-        _updateReward(msg.sender);
+        uint256 pendingReward = _pendingReward(msg.sender);
+        stake.rewardDebt += pendingReward;
 
-        stakeData.amount -= _amount;
-        stakeData.rewardDebt = (stakeData.amount * REWARD_RATE) / 1 days;
+        stake.amount -= _amount;
         rntToken.transfer(msg.sender, _amount);
 
-        emit Unstaked(msg.sender, _amount);
+        stake.lastClaimed = block.timestamp;
     }
 
     function claimReward() external {
-        _updateReward(msg.sender);
+        uint256 reward = _pendingReward(msg.sender) +
+            stakes[msg.sender].rewardDebt;
+        stakes[msg.sender].rewardDebt = 0;
+        stakes[msg.sender].lastClaimed = block.timestamp;
+
+        lockedRewards[msg.sender] = LockedReward({
+            amount: reward,
+            unlockTime: block.timestamp + LOCK_DURATION
+        });
+        esRntToken.transfer(msg.sender, reward);
     }
 
-    function convertReward(uint256 _amount) external {
+    function takeReward()
+        external
+        returns (uint256 rewardAmount, uint256 burnAmount)
+    {
         LockedReward storage lockedReward = lockedRewards[msg.sender];
-        require(lockedReward.amount >= _amount, "Insufficient locked rewards");
+        uint256 unlockTime = lockedReward.unlockTime;
+        if (block.timestamp < unlockTime) {
+            burnAmount =
+                (lockedReward.amount * (unlockTime - block.timestamp)) /
+                LOCK_DURATION;
+            esRntToken.burn(msg.sender, burnAmount);
+        }
 
-        uint256 burnAmount = (_amount *
-            (LOCK_DURATION - (block.timestamp - lockedReward.unlockTime))) /
-            LOCK_DURATION;
-        uint256 transferAmount = _amount - burnAmount;
+        rewardAmount = lockedReward.amount - burnAmount;
+        lockedReward.amount = 0;
 
-        lockedReward.amount -= _amount;
-        esRntToken.burn(msg.sender, burnAmount);
-        rntToken.transfer(msg.sender, transferAmount);
+        rntToken.transfer(msg.sender, rewardAmount);
+        // rntToken.transfer(address(0), burnAmount);
 
-        emit RewardConverted(msg.sender, transferAmount, burnAmount);
+        emit RewardConverted(msg.sender, rewardAmount, burnAmount);
     }
 
-    function _updateReward(address _user) internal {
-        Stake storage stakeData = stakes[_user];
-        LockedReward storage lockedReward = lockedRewards[_user];
-
-        if (stakeData.amount > 0) {
-            console.log(
-                "(block.timestamp - stakeData.lastClaimed):",
-                (block.timestamp - stakeData.lastClaimed)
-            );
-            console.log("stakeData.lastClaimed:", stakeData.lastClaimed);
-            uint256 pendingReward = (stakeData.amount *
-                REWARD_RATE *
-                (block.timestamp - stakeData.lastClaimed)) / 1 days;
-            console.log("pendingReward:", pendingReward);
-            if (pendingReward > 0) {
-                esRntToken.transfer(_user, pendingReward);
-                lockedReward.amount += pendingReward;
-                lockedReward.unlockTime = block.timestamp + LOCK_DURATION;
-                stakeData.lastClaimed = block.timestamp;
-
-                emit RewardClaimed(_user, pendingReward);
-            }
-        }
+    function _pendingReward(address account) internal view returns (uint256) {
+        Stake storage stake = stakes[account];
+        uint256 stakedDuration = block.timestamp - stake.lastClaimed;
+        uint256 pendingReward = (stake.amount * REWARD_RATE * stakedDuration) /
+            1 days;
+        return pendingReward;
     }
 }
