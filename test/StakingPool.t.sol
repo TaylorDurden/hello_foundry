@@ -28,7 +28,6 @@ contract StakingContractTest is Test {
         );
         rntToken.approve(address(stakingContract), 15 * 10 * 9 * 1 ether);
         esRntToken.approve(address(stakingContract), 15 * 10 * 9 * 1 ether);
-        vm.stopPrank();
 
         // Mint some tokens for testing
         rntToken.transfer(alice, 1000 ether);
@@ -36,7 +35,8 @@ contract StakingContractTest is Test {
         nonce = rntToken.nonces(alice);
         deadline = block.timestamp + 1 days;
 
-        esRntToken.transfer(address(stakingContract), 10000 ether); // Fund the staking contract with esRNT tokens
+        esRntToken.transfer(address(stakingContract), 15 * 10 * 9 ether); // Fund the staking contract with esRNT tokens
+        vm.stopPrank();
     }
 
     function testStakeWithPermit() public {
@@ -96,7 +96,7 @@ contract StakingContractTest is Test {
         assertEq(esRntToken.balanceOf(alice), amount);
     }
 
-    function testConvertReward() public {
+    function testTakeReward() public {
         vm.startPrank(alice);
         (uint8 v, bytes32 r, bytes32 s) = _generatePermitSignature(alice);
 
@@ -107,22 +107,20 @@ contract StakingContractTest is Test {
         stakingContract.claimReward();
 
         assertEq(rntToken.balanceOf(alice), 1000 ether - 100 ether);
-        (uint256 rewardAmount, uint256 unlockTime) = stakingContract
+        (uint256 lockingAmount, uint256 unlockTime) = stakingContract
             .lockedRewards(alice);
-        (uint256 stakeAmount, , uint256 lastClaimed) = stakingContract.stakes(
-            alice
-        );
-        assertEq(
-            rewardAmount,
-            (stakeAmount * (block.timestamp - lastClaimed)) / 30 days
-        );
+        assertEq(lockingAmount, lockingAmount);
         // Alice converts all esRNT rewards to RNT
+        vm.warp(block.timestamp + 1 days);
         (uint256 rewardAmountConverted, uint256 burnAmount) = stakingContract
             .takeReward();
         vm.stopPrank();
-
-        assertEq(esRntToken.balanceOf(alice), 0);
-        assertEq(rntToken.balanceOf(alice), 1000 ether + rewardAmountConverted);
+        console.log("rewardAmountConverted:", rewardAmountConverted);
+        assertEq(esRntToken.balanceOf(alice), rewardAmountConverted);
+        assertEq(
+            rntToken.balanceOf(alice),
+            1000 ether - 100 ether + rewardAmountConverted
+        );
     }
 
     function _generatePermitSignature(

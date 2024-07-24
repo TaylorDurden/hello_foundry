@@ -126,6 +126,14 @@ contract StakingPool is Ownable {
             burnAmount =
                 (lockedReward.amount * (unlockTime - block.timestamp)) /
                 LOCK_DURATION;
+            console.log(
+                "(unlockTime - block.timestamp):",
+                (unlockTime - block.timestamp)
+            );
+            console.log("unlockTime:", unlockTime);
+            console.log("30 days:", 30 days);
+            console.log("block.timestamp:", block.timestamp);
+            console.log("burnAmount:", burnAmount / 1 ether);
             esRntToken.burn(msg.sender, burnAmount);
         }
 
