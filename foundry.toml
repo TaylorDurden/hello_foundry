@@ -7,5 +7,9 @@ libs = ['lib']                                                # a list of librar
 optimizer = true                                              # enable or disable the solc optimizer
 optimizer_runs = 200       
 fs_permissions = [{ access = "read-write", path = "./"}]                                   # the number of optimizer runs
+ffi = true
+ast = true
+build_info = true
+extra_output = ["storageLayout"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
