@@ -26,11 +26,6 @@ contract UUPSTokenFactoryTest is Test {
     function setUp() public {
         owner = makeAddr("owner");
         vm.deal(owner, 10 ether);
-
-        // vm.startPrank(owner);
-        // // deploy proxy
-
-        // vm.stopPrank();
     }
 
     function testDeployInscriptionV1() public {
@@ -80,14 +75,6 @@ contract UUPSTokenFactoryTest is Test {
             owner
         );
 
-        // proxy
-        // (bool s0, ) = address(proxy).call(
-        //     abi.encodeWithSelector(
-        //         InscriptionFactoryV2.setERC20TokenAddr.selector,
-        //         address(tokenERC20V2)
-        //     )
-        // );
-        // require(s0);
         (, bytes memory data) = address(proxy).call(
             abi.encodeWithSelector(
                 InscriptionFactoryV2.deployInscription.selector,
