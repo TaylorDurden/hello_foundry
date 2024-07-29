@@ -27,7 +27,7 @@ contract InscriptionTokenV2 is
         perMint = _perMint;
     }
 
-    function mint(address to) external {
+    function mint(address to) external onlyOwner {
         _mint(to, perMint);
     }
 }
@@ -45,7 +45,7 @@ contract InscriptionTokenV1 is ERC20, Ownable {
         _mint(msg.sender, _totalSupply);
     }
 
-    function mint(address to) external {
+    function mint(address to) external onlyOwner {
         _mint(to, perMint);
     }
 }
