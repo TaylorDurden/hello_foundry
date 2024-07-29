@@ -31,7 +31,7 @@ if [[ -z "$SEPOLIA_RPC_URL" || -z "$ETHERSCAN_API_KEY" || -z "$CHAIN_ID" ]]; the
 fi
 
 # deploy
-forge script "$SCRIPT_FILE" \
+forge clean && forge script "$SCRIPT_FILE" \
   --rpc-url "$SEPOLIA_RPC_URL" \
   --broadcast \
   --verify \
