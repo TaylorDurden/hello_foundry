@@ -31,6 +31,8 @@ contract UUPSTokenFactoryTest is Test {
     function testDeployInscriptionV1() public {
         vm.startPrank(owner);
         factoryV1 = new InscriptionFactoryV1();
+        // the initialize function only call once and sets the owner storage slot to proxy contract
+        // there is no need to initialize again in subsequent upgrade
         proxy = new ERC1967Proxy(
             address(factoryV1),
             abi.encodeWithSelector(InscriptionFactoryV1.initialize.selector)
