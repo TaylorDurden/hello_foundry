@@ -7,14 +7,15 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
-import {InscriptionToken} from "../../src/Upgradable/InscriptionToken.sol";
+import {InscriptionTokenV1, InscriptionTokenV2} from "../../src/Upgradable/InscriptionToken.sol";
 import {InscriptionFactoryV1} from "../../src/Upgradable/UUPSTokenFactoryV1.sol";
 import {InscriptionFactoryV2} from "../../src/Upgradable/UUPSTokenFactoryV2.sol";
 
 contract UUPSTokenFactoryTest is Test {
     InscriptionFactoryV1 factoryV1;
     InscriptionFactoryV2 factoryV2;
-    address tokenERC20;
+    InscriptionTokenV1 tokenERC20V1;
+    InscriptionTokenV2 tokenERC20V2;
     ERC1967Proxy proxy;
 
     address owner;
@@ -24,6 +25,7 @@ contract UUPSTokenFactoryTest is Test {
 
     function setUp() public {
         owner = makeAddr("owner");
+        vm.deal(owner, 10 ether);
 
         // vm.startPrank(owner);
         // // deploy proxy
@@ -34,7 +36,10 @@ contract UUPSTokenFactoryTest is Test {
     function testDeployInscriptionV1() public {
         vm.startPrank(owner);
         factoryV1 = new InscriptionFactoryV1();
-        proxy = new ERC1967Proxy(address(factoryV1), "");
+        proxy = new ERC1967Proxy(
+            address(factoryV1),
+            abi.encodeWithSelector(InscriptionFactoryV1.initialize.selector)
+        );
         (bool s, bytes memory data) = address(proxy).call(
             abi.encodeWithSelector(
                 factoryV1.deployInscription.selector,
@@ -44,15 +49,15 @@ contract UUPSTokenFactoryTest is Test {
             )
         );
         require(s);
-        tokenERC20 = abi.decode(data, (address));
-        InscriptionToken token = InscriptionToken(tokenERC20);
+        tokenERC20V1 = InscriptionTokenV1(abi.decode(data, (address)));
+        InscriptionTokenV1 token = InscriptionTokenV1(tokenERC20V1);
         assertEq(token.symbol(), Symbol);
         assertEq(token.totalSupply(), TotalSupply);
 
         (bool s1, ) = address(proxy).call(
             abi.encodeWithSelector(
                 factoryV1.mintInscription.selector,
-                tokenERC20
+                tokenERC20V1
             )
         );
         require(s1);
@@ -64,25 +69,28 @@ contract UUPSTokenFactoryTest is Test {
     function testDeployInscriptionV2() public {
         testDeployInscriptionV1();
         vm.startPrank(owner);
-        factoryV2 = new InscriptionFactoryV2();
+        tokenERC20V2 = new InscriptionTokenV2();
         Upgrades.upgradeProxy(
             address(proxy),
             "UUPSTokenFactoryV2.sol:InscriptionFactoryV2",
-            "",
+            abi.encodeWithSelector(
+                InscriptionFactoryV2.setProxyToken.selector,
+                address(tokenERC20V2)
+            ),
             owner
         );
-        // factoryV2.setERC20TokenAddr(tokenERC20);
+
         // proxy
-        (bool s0, ) = address(proxy).call(
-            abi.encodeWithSelector(
-                factoryV2.setERC20TokenAddr.selector,
-                tokenERC20
-            )
-        );
-        require(s0);
+        // (bool s0, ) = address(proxy).call(
+        //     abi.encodeWithSelector(
+        //         InscriptionFactoryV2.setERC20TokenAddr.selector,
+        //         address(tokenERC20V2)
+        //     )
+        // );
+        // require(s0);
         (, bytes memory data) = address(proxy).call(
             abi.encodeWithSelector(
-                factoryV2.deployInscription.selector,
+                InscriptionFactoryV2.deployInscription.selector,
                 Symbol,
                 TotalSupply,
                 PermitMint,
@@ -90,21 +98,17 @@ contract UUPSTokenFactoryTest is Test {
             )
         );
         address token = abi.decode(data, (address));
-        // assertEq(InscriptionToken(token).symbol(), Symbol);
-        // assertEq(InscriptionToken(token).totalSupply(), TotalSupply);
-
-        (bool s1, ) = address(proxy).call(
-            abi.encodeWithSelector(factoryV2.mintInscription.selector, token)
+        (bool s1, ) = address(proxy).call{value: 100}(
+            abi.encodeWithSelector(
+                InscriptionFactoryV2.mintInscription.selector,
+                token
+            )
         );
         require(s1);
-        // assertEq(
-        //     InscriptionToken(token).totalSupply(),
-        //     TotalSupply + PermitMint
-        // );
-        assertEq(InscriptionToken(token).perMint(), PermitMint);
-        assertEq(InscriptionToken(token).balanceOf(owner), PermitMint);
+        assertEq(InscriptionTokenV2(token).perMint(), PermitMint);
+        assertEq(InscriptionTokenV2(token).balanceOf(owner), PermitMint);
         assertEq(
-            InscriptionToken(token).totalSupply(),
+            InscriptionTokenV2(token).totalSupply(),
             TotalSupply + PermitMint
         );
         vm.stopPrank();

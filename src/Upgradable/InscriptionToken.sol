@@ -6,7 +6,10 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-contract InscriptionToken is
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+contract InscriptionTokenV2 is
     Initializable,
     OwnableUpgradeable,
     ERC20Upgradeable
@@ -22,6 +25,24 @@ contract InscriptionToken is
         __Ownable_init(msg.sender);
         _mint(msg.sender, totalSupply);
         perMint = _perMint;
+    }
+
+    function mint(address to) external {
+        _mint(to, perMint);
+    }
+}
+
+contract InscriptionTokenV1 is ERC20, Ownable {
+    uint256 public perMint;
+
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        uint256 _totalSupply,
+        uint256 _perMint
+    ) ERC20(_name, _symbol) Ownable(msg.sender) {
+        perMint = _perMint;
+        _mint(msg.sender, _totalSupply);
     }
 
     function mint(address to) external {
