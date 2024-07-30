@@ -50,9 +50,9 @@ contract NFTMarketTest is
         owner = address(this);
         user1 = address(0x1);
         user2 = address(0x2);
-        myNFT1.mint(user1);
+        myNFT1.mint(user1, "");
         tokenId1 = 0;
-        myNFT1.mint(user2);
+        myNFT1.mint(user2, "");
         tokenId2 = 0;
 
         tokenA.transfer(user1, 10e18);
@@ -145,9 +145,7 @@ contract NFTMarketTest is
         vm.startPrank(user2);
         tokenB.approve(address(nftMarket), tokenId1Price);
         nftMarket.buy(myNFT1, tokenId1);
-        vm.expectRevert(
-            abi.encodeWithSelector(NotListedForSale.selector, tokenId1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(NotForSale.selector, tokenId1));
         nftMarket.buy(myNFT1, tokenId1);
         vm.stopPrank();
     }

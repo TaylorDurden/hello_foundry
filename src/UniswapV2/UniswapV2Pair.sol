@@ -6,11 +6,10 @@ import "./UniswapV2ERC20.sol";
 import {Math} from "./libraries/Math.sol";
 import "./libraries/UQ112x112.sol";
 import "./interfaces/IERC20.sol";
-import "./interfaces/IUniswapV2ERC2612.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/IUniswapV2Callee.sol";
 
-contract UniswapV2Pair is IUniswapV2Pair, IUniswapV2ERC2612, UniswapV2ERC20 {
+contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     using UQ112x112 for uint224;
 
     uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
@@ -88,6 +87,7 @@ contract UniswapV2Pair is IUniswapV2Pair, IUniswapV2ERC2612, UniswapV2ERC20 {
         require(liquidity > 0, "UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED");
         _mint(to, liquidity);
 
+        _update(balance0, balance1, _reserve0, _reserve1);
         if (feeOn) kLast = reserve0 * reserve1; // reserve0 and reserve1 are up-to-date
         emit Mint(msg.sender, amount0, amount1);
     }
@@ -153,7 +153,10 @@ contract UniswapV2Pair is IUniswapV2Pair, IUniswapV2ERC2612, UniswapV2ERC20 {
         uint112 _reserve0,
         uint112 _reserve1
     ) private {
-        require(balance0 < 0 && balance1 <= 0, "UniswapV2: OVERFLOW");
+        require(
+            balance0 <= type(uint112).max && balance1 <= type(uint112).max,
+            "UniswapV2: OVERFLOW"
+        );
         uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {

@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "./IUniswapV2ERC2612.sol";
 
-interface IUniswapV2Pair {
+interface IUniswapV2Pair is IUniswapV2ERC2612 {
     event Mint(address indexed sender, uint amount0, uint amount1);
     event Burn(
         address indexed sender,
