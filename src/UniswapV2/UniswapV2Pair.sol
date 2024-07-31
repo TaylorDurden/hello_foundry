@@ -9,6 +9,8 @@ import "./interfaces/IERC20.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/IUniswapV2Callee.sol";
 
+import "forge-std/Test.sol";
+
 contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     using UQ112x112 for uint224;
 
@@ -121,8 +123,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         address to
     ) external override lock returns (uint amount0, uint amount1) {
         (uint112 _reserve0, uint112 _reserve1, ) = getReserves(); // gas savings
-        address _token0 = token0;
-        address _token1 = token1;
+        address _token0 = token0; // gas savings
+        address _token1 = token1; // gas savings
         uint balance0 = IERC20(_token0).balanceOf(address(this));
         uint balance1 = IERC20(_token1).balanceOf(address(this));
         uint liquidity = balanceOf[address(this)];
@@ -131,6 +133,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         uint _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
         amount0 = (liquidity * balance0) / _totalSupply; // using balances ensures pro-rata distribution
         amount1 = (liquidity * balance1) / _totalSupply; // using balances ensures pro-rata distribution
+        console.log("amount0:", amount0);
+        console.log("amount1:", amount1);
         require(
             amount0 > 0 && amount1 > 0,
             "UniswapV2: INSUFFICIENT_LIQUIDITY_BURNED"
