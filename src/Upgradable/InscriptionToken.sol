@@ -9,43 +9,35 @@ import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract InscriptionTokenV2 is
-    Initializable,
-    OwnableUpgradeable,
-    ERC20Upgradeable
-{
-    uint256 public perMint;
+contract InscriptionTokenV2 is Initializable, OwnableUpgradeable, ERC20Upgradeable {
+  uint256 public perMint;
 
-    function initialize(
-        string memory symbol,
-        uint256 totalSupply,
-        uint256 _perMint
-    ) public initializer {
-        __ERC20_init(symbol, symbol);
-        __Ownable_init(msg.sender);
-        _mint(msg.sender, totalSupply);
-        perMint = _perMint;
-    }
+  function initialize(string memory symbol, uint256 totalSupply, uint256 _perMint) public initializer {
+    __ERC20_init(symbol, symbol);
+    __Ownable_init(msg.sender);
+    _mint(msg.sender, totalSupply);
+    perMint = _perMint;
+  }
 
-    function mint(address to) external onlyOwner {
-        _mint(to, perMint);
-    }
+  function mint(address to) external onlyOwner {
+    _mint(to, perMint);
+  }
 }
 
 contract InscriptionTokenV1 is ERC20, Ownable {
-    uint256 public perMint;
+  uint256 public perMint;
 
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint256 _totalSupply,
-        uint256 _perMint
-    ) ERC20(_name, _symbol) Ownable(msg.sender) {
-        perMint = _perMint;
-        _mint(msg.sender, _totalSupply);
-    }
+  constructor(
+    string memory _name,
+    string memory _symbol,
+    uint256 _totalSupply,
+    uint256 _perMint
+  ) ERC20(_name, _symbol) Ownable(msg.sender) {
+    perMint = _perMint;
+    _mint(msg.sender, _totalSupply);
+  }
 
-    function mint(address to) external onlyOwner {
-        _mint(to, perMint);
-    }
+  function mint(address to) external onlyOwner {
+    _mint(to, perMint);
+  }
 }

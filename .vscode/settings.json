@@ -1,0 +1,64 @@
+{
+  "workbench.colorTheme": "Default High Contrast",
+  "window.zoomLevel": 2,
+  "workbench.iconTheme": "eq-material-theme-icons",
+  "vsicons.projectDetection.autoReload": true,
+  "editor.tabSize": 2,
+  "vsicons.dontShowNewVersionMessage": true,
+  "python.venvPath": "/Users/taylor/.virtualenvs",
+  "terminal.integrated.sendKeybindingsToShell": true,
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "materialTheme.fixIconsRunning": false,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "git.autofetch": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "terminal.integrated.tabs.enabled": true,
+  "terminal.integrated.fontFamily": "Meslo LG S DZ for Powerline",
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "explorer.confirmDragAndDrop": false,
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.linkedEditing": true,
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "bracketPairColorizer.depreciation-notice": false,
+  "tabnine.experimentalAutoImports": true,
+  "solidity.telemetry": true,
+  "[solidity]": {
+    "editor.defaultFormatter": "JuanBlanco.solidity"
+  },
+  "editor.formatOnSave": true,
+  "prettier.printWidth": 120,
+  "prettier.proseWrap": "never",
+  "github.copilot.enable": {
+    "*": false,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "github.copilot.editor.enableAutoCompletions": true,
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.accessibilitySupport": "off",
+  "[go]": {
+    "editor.insertSpaces": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "security.workspace.trust.untrustedFiles": "open",
+  "solidity.compileUsingRemoteVersion": "v0.8.20+commit.a1b79de6"
+}
