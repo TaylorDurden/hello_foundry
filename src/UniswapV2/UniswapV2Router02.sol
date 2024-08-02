@@ -56,6 +56,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
                 reserveA,
                 reserveB
             );
+            console.log("amountBOptimal:", amountBOptimal);
             if (amountBOptimal <= amountBDesired) {
                 require(
                     amountBOptimal >= amountBMin,
@@ -484,12 +485,14 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
             amounts[amounts.length - 1] >= amountOutMin,
             "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
         );
+
         TransferHelper.safeTransferFrom(
             path[0],
             msg.sender,
             UniswapV2Library.pairFor(factory, path[0], path[1]),
             amounts[0]
         );
+
         _swap(amounts, path, address(this));
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);

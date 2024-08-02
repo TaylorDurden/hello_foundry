@@ -65,7 +65,7 @@ contract UniswapV2ERC20 is IUniswapV2ERC2612 {
         address from,
         address to,
         uint value
-    ) external returns (bool) {
+    ) external override returns (bool) {
         if (
             allowance[from][msg.sender] > 0 &&
             allowance[from][msg.sender] >= value

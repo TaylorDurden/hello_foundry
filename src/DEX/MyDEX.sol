@@ -1,55 +1,55 @@
-// // SPDX-License-Identifier: UNLICENSED
-// pragma solidity ^0.8.13;
-// import "../UniswapV2/interfaces/IUniswapV2Router02.sol";
-// import "../UniswapV2/interfaces/IERC20.sol";
-// import "../UniswapV2/interfaces/IWETH.sol";
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
 
-// contract MyDex {
-//     IUniswapV2Router02 public uniswapV2Router;
-//     IWETH public WETH;
+import "forge-std/Test.sol";
 
-//     constructor(address _uniswapV2Router, address _WETH) {
-//         uniswapV2Router = IUniswapV2Router02(_uniswapV2Router);
-//         WETH = IWETH(_WETH);
-//     }
+import "../UniswapV2/interfaces/IUniswapV2Router02.sol";
+import "../UniswapV2/interfaces/IERC20.sol";
+import "./IWETH.sol";
 
-//     function buyETH() external payable {
-//         require(msg.value > 0, "You need to send some ETH");
+contract MyDex {
+    IUniswapV2Router02 public uniswapV2Router;
+    IWETH public WETH;
 
-//         WETH.deposit{value: msg.value}();
-//         WETH.approve(address(uniswapV2Router), msg.value);
+    constructor(address _uniswapV2Router) {
+        uniswapV2Router = IUniswapV2Router02(_uniswapV2Router);
+        WETH = IWETH(uniswapV2Router.WETH());
+    }
 
-//         path[0] = address(WETH);
-//         path[1] = uniswapV2Router.WETH();
+    function buyETH(
+        uint256 amountIn,
+        address tokenIn,
+        uint256 amountOut
+    ) external {
+        address[] memory path = new address[](2);
+        path[0] = tokenIn;
+        path[1] = address(WETH);
+        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        IERC20(tokenIn).approve(address(uniswapV2Router), amountIn);
+        uniswapV2Router.swapExactTokensForETH(
+            amountIn,
+            (amountIn * 90) / 100,
+            path,
+            msg.sender,
+            block.timestamp
+        );
+    }
 
-//         uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-//             msg.value,
-//             0, // accept any amount of ETH
-//             path,
-//             msg.sender,
-//             block.timestamp
-//         );
-//     }
+    function sellETH(address tokenOut) external payable {
+        require(msg.value > 0, "You need to sell some ETH");
 
-//     function sellETH(uint256 amount) external {
-//         require(amount > 0, "You need to sell some ETH");
+        address[] memory path = new address[](2);
+        path[0] = address(WETH);
+        path[1] = tokenOut;
 
-//         WETH.deposit{value: amount}();
-//         WETH.approve(address(uniswapV2Router), amount);
+        uniswapV2Router.swapETHForExactTokens{value: msg.value}(
+            msg.value,
+            path,
+            msg.sender,
+            block.timestamp
+        );
+    }
 
-//         path[0] = uniswapV2Router.WETH();
-//         path[1] = address(WETH);
-
-//         uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{
-//             value: amount
-//         }(
-//             0, // accept any amount of WETH
-//             path,
-//             msg.sender,
-//             block.timestamp
-//         );
-//     }
-
-//     // to receive ETH
-//     receive() external payable {}
-// }
+    // to receive ETH
+    receive() external payable {}
+}

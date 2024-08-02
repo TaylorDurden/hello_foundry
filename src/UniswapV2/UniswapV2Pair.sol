@@ -133,8 +133,6 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         uint _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
         amount0 = (liquidity * balance0) / _totalSupply; // using balances ensures pro-rata distribution
         amount1 = (liquidity * balance1) / _totalSupply; // using balances ensures pro-rata distribution
-        console.log("amount0:", amount0);
-        console.log("amount1:", amount1);
         require(
             amount0 > 0 && amount1 > 0,
             "UniswapV2: INSUFFICIENT_LIQUIDITY_BURNED"

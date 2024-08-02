@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
+import "forge-std/Test.sol";
 import "../interfaces/IUniswapV2Pair.sol";
+import "../UniswapV2Pair.sol";
 
 import "./SafeMath.sol";
 
@@ -25,7 +27,9 @@ library UniswapV2Library {
         address factory,
         address tokenA,
         address tokenB
-    ) internal pure returns (address pair) {
+    ) internal view returns (address pair) {
+        bytes memory bytecode = type(UniswapV2Pair).creationCode;
+
         (address token0, address token1) = sortTokens(tokenA, tokenB);
         pair = address(
             uint160(
@@ -35,7 +39,7 @@ library UniswapV2Library {
                             hex"ff",
                             factory,
                             keccak256(abi.encodePacked(token0, token1)),
-                            hex"d13d67a0aab97ea7960fe25c26e675a0d5c8a1672d7b9eb5d650a1b156c0cd5a" // init code hash
+                            keccak256(abi.encodePacked(bytecode)) // init code hash
                         )
                     )
                 )
