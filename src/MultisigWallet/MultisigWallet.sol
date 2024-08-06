@@ -112,7 +112,7 @@ contract MultiSigWallet {
   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
     Transaction storage transaction = transactions[_txIndex];
 
-    // 验证签名
+    // verify signature
     bytes32 txHash = getTransactionHash(_txIndex, transaction.to, transaction.value, transaction.data);
     require(recoverSigner(txHash, _signature) == msg.sender, "invalid signature");
 

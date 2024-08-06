@@ -63,6 +63,32 @@ contract MultiSigWalletTest is Test {
     vm.stopPrank();
   }
 
+  function testRevokeConfirmation() public {
+    vm.startPrank(owners[0]);
+    multiSigWallet.submitTransaction(address(0xabc), 1 ether, "");
+    bytes32 txHash = multiSigWallet.getTransactionHash(0, address(0xabc), 1 ether, "");
+    bytes memory signature1 = signTransaction(txHash, owner0PK);
+    bytes memory signature2 = signTransaction(txHash, owner1PK);
+    multiSigWallet.confirmTransaction(0, signature1);
+    vm.stopPrank();
+    vm.startPrank(owners[1]);
+    multiSigWallet.confirmTransaction(0, signature2);
+    vm.stopPrank();
+
+    // Revoke confirmation
+    vm.startPrank(owners[1]);
+    multiSigWallet.revokeConfirmation(0);
+    (, , , , uint256 numConfirmations) = multiSigWallet.getTransaction(0);
+    assertEq(numConfirmations, 1); // Ensure the confirmation count decreased
+    vm.stopPrank();
+
+    // Attempt to execute transaction (should fail)
+    vm.expectRevert("cannot execute tx");
+    vm.startPrank(owners[0]);
+    multiSigWallet.executeTransaction(0);
+    vm.stopPrank();
+  }
+
   function signTransaction(bytes32 txHash, uint256 privateKey) private view returns (bytes memory) {
     bytes32 digest = keccak256(abi.encodePacked("\x19\x01", multiSigWallet.DOMAIN_SEPARATOR(), txHash));
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
