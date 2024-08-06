@@ -2,10 +2,18 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../src/MultisigWallet/MultisigWallet.sol";
+
+contract TestERC20 is ERC20 {
+  constructor() ERC20("TestToken", "TTK") {
+    _mint(msg.sender, 1000 * 10 ** 18);
+  }
+}
 
 contract MultiSigWalletTest is Test {
   MultiSigWallet multiSigWallet;
+  TestERC20 testToken;
   address[] owners;
   uint256 owner0PK;
   uint256 owner1PK;
@@ -21,6 +29,11 @@ contract MultiSigWalletTest is Test {
 
     multiSigWallet = new MultiSigWallet(owners, numConfirmationsRequired);
     vm.deal(address(multiSigWallet), 100 ether);
+
+    testToken = new TestERC20();
+
+    // Transfer some tokens to the multi-signature wallet
+    testToken.transfer(address(multiSigWallet), 100 * 10 ** 18);
   }
 
   function testSubmitTransaction() public {
@@ -87,6 +100,25 @@ contract MultiSigWalletTest is Test {
     vm.startPrank(owners[0]);
     multiSigWallet.executeTransaction(0);
     vm.stopPrank();
+  }
+
+  function testExecuteERC20Transfer() public {
+    vm.startPrank(owners[0]);
+    bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", owners[2], 50 * 10 ** 18);
+    multiSigWallet.submitTransaction(address(testToken), 0, data);
+    bytes32 txHash = multiSigWallet.getTransactionHash(0, address(testToken), 0, data);
+    bytes memory signature0 = signTransaction(txHash, owner0PK);
+    bytes memory signature1 = signTransaction(txHash, owner1PK);
+    multiSigWallet.confirmTransaction(0, signature0);
+    vm.stopPrank();
+    vm.startPrank(owners[1]);
+    multiSigWallet.confirmTransaction(0, signature1);
+    multiSigWallet.executeTransaction(0);
+    vm.stopPrank();
+
+    // Check balances
+    assertEq(testToken.balanceOf(owners[2]), 50 * 10 ** 18);
+    assertEq(testToken.balanceOf(address(multiSigWallet)), 50 * 10 ** 18);
   }
 
   function signTransaction(bytes32 txHash, uint256 privateKey) private view returns (bytes memory) {
