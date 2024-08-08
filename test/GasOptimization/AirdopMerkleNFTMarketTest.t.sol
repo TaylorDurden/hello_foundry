@@ -51,7 +51,8 @@ contract AirdopMerkleNFTMarketTest is Test {
     wl[0] = keccak256(abi.encodePacked(user, price));
     wl[1] = keccak256(abi.encodePacked(owner, price));
     bytes32 merkleRoot = merkleTree.getRoot(wl);
-    proof = merkleTree.getProof(wl, 0); // will get proof for 0x2 value
+    proof = merkleTree.getProof(wl, 0);
+    console.log("proof.length", proof.length);
     market = new AirdopMerkleNFTMarket(address(token), merkleRoot);
     nft = new MyNFT(address(market));
     token.transfer(user, 1000 * 10 ** token.decimals());
